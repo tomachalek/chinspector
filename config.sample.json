@@ -1,0 +1,12 @@
+{
+    "chiaLogPath": "~/.chia/mainnet/log/debug.log",
+    "timeZoneOffset": "+02:00",
+    "checkIntervalSec": 5,
+    "influxDb": {
+        "server": "http://localhost:8096",
+        "organization": "chinspector",
+        "bucket": "status",
+        "token": "ATokenGeneratedByInfluxDB==",
+        "retentionPolicy": "midterm"
+    }
+}
