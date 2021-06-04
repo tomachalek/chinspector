@@ -94,7 +94,7 @@ To run the agent as a systemd service:
 
 ```
 [Unit]
-Description=A custom agent for collecting UCNK apps logs
+Description=A custom agent for collecting Chia logs
 After=network.target
 
 [Service]
