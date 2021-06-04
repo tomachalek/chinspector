@@ -1,6 +1,9 @@
-# Chinspector - a simple log information extractor and agent for a Chia blockchain node/harvester
+# Chinspector 
 
-Status note: this is a "raw and dirty" work in progress project
+Chinspector is a simple log information extractor and agent for a Chia blockchain node/harvester.
+
+
+🚧 Status note: this is a "raw and dirty" work in progress project 🚧
 
 
 Chinspector is an agent you can install on the same server as your Chia services (node, harvester)
