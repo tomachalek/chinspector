@@ -16,24 +16,34 @@ package logrecord
 
 import (
 	"log"
+	"time"
 
-	"github.com/tomachalek/chinspector/config"
-	"github.com/tomachalek/chinspector/logrecord/fullnode"
-	"github.com/tomachalek/chinspector/logrecord/harvester"
-	"github.com/tomachalek/chinspector/logrecord/raw"
-	"github.com/tomachalek/chinspector/writer/influx"
+	"chinspector/config"
+	"chinspector/logrecord/fullnode"
+	"chinspector/logrecord/harvester"
+	"chinspector/logrecord/raw"
+	"chinspector/notify"
+	"chinspector/writer/influx"
 )
 
 type Processor struct {
-	checkIntervalSec int
-	tzOffset         string
-	filePath         string
-	currRecord       *raw.PreparsedRecord
-	writeChannel     chan<- influx.InfluxRecord
-	writer           *influx.RecordWriter
+	checkInterval  time.Duration
+	numErrorsAlarm int
+	tzOffset       string
+	filePath       string
+	currRecord     *raw.PreparsedRecord
+	writeChannel   chan<- influx.InfluxRecord
+	writer         *influx.RecordWriter
+	lastCheckTS    time.Time
+	currCheckTS    time.Time
+	lastHealtyTS   time.Time
+	errCounts      map[string][]time.Time // key = measurement (e.g. "harvester")
+	mailConf       *config.EmailNotification
 }
 
-func (proc *Processor) OnCheckStart() {
+func (proc *Processor) OnCheckStart(ts time.Time) {
+	proc.lastCheckTS = proc.currCheckTS
+	proc.currCheckTS = ts
 
 }
 
@@ -75,24 +85,62 @@ func (proc *Processor) OnLineRead(item string) {
 	}
 }
 
+func (proc *Processor) tsRangeIsInAlarmLimit(t1 time.Time, t2 time.Time) bool {
+	return t2.Sub(t1) < proc.checkInterval
+}
+
 func (proc *Processor) parseCurrentRecord() {
+	if time.Since(proc.lastHealtyTS) > 5*time.Minute {
+		go func() {
+			err := notify.SendNotification(
+				proc.mailConf,
+				"Chinspector ALARM - node out of sync",
+				"Check the Node, Dude!!! Node is likely fucked Man!!!",
+			)
+			if err != nil {
+				log.Print("ERROR: failed to send notification mail: ", err)
+			}
+		}()
+	}
 	rec := raw.ParseRecord(proc.currRecord)
 	if rec == nil {
 		log.Printf("WARNING: unknown record: %v", rec)
 		return
 	}
-	switch rec.RecType {
-	case "harvester":
-		harvester.ProcessRecord(rec, proc.writeChannel)
-	case "full_node":
-		fullnode.ProcessRecord(rec, proc.writeChannel)
-	case "wallet":
-		// TODO
+
+	if rec.Level == "ERROR" {
+		if len(proc.errCounts[rec.Service]) == 0 {
+			proc.errCounts[rec.Service] = make([]time.Time, 0, proc.numErrorsAlarm)
+		}
+		proc.errCounts[rec.Service] = append(proc.errCounts[rec.Service], time.Now())
+		numRecs := len(proc.errCounts[rec.Service])
+		if numRecs >= proc.numErrorsAlarm && proc.tsRangeIsInAlarmLimit(
+			proc.errCounts[rec.Service][numRecs-1],
+			proc.errCounts[rec.Service][0],
+		) {
+			// TODO run alarm
+		}
+		proc.writeChannel <- NewErrLineRec(
+			rec.Service,
+			rec.Datetime,
+			rec.Message,
+		)
+
+	} else {
+		switch rec.Service {
+		case "harvester":
+			harvester.ProcessRecord(rec, proc.writeChannel)
+		case "full_node":
+			fullnode.ProcessRecord(rec, proc.writeChannel)
+			proc.lastHealtyTS = time.Now()
+		case "wallet":
+			// TODO
+		}
 	}
 }
 
 func (proc *Processor) CheckIntervalSec() int {
-	return proc.checkIntervalSec
+	return int(proc.checkInterval.Seconds())
 }
 
 func (proc *Processor) FilePath() string {
@@ -107,10 +155,12 @@ func NewProcessor(conf *config.Props) (*Processor, error) {
 	}
 
 	return &Processor{
-		checkIntervalSec: conf.CheckIntervalSec,
-		filePath:         conf.ChiaLogPath,
-		tzOffset:         conf.TimeZoneOffset,
-		writeChannel:     wch,
-		writer:           writer,
+		checkInterval:  time.Duration(conf.CheckIntervalSec) * time.Second,
+		numErrorsAlarm: conf.NumErrorsAlarm,
+		filePath:       conf.ChiaLogPath,
+		tzOffset:       conf.TimeZoneOffset,
+		writeChannel:   wch,
+		writer:         writer,
+		errCounts:      make(map[string][]time.Time),
 	}, nil
 }

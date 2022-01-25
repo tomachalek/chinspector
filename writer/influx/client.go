@@ -18,9 +18,10 @@ import (
 	"log"
 	"time"
 
+	"chinspector/config"
+
 	influxv2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
-	"github.com/tomachalek/chinspector/config"
 )
 
 // InfluxRecord represents a record suitable to be inserted
@@ -42,13 +43,12 @@ type InfluxRecord interface {
 // RecordWriter allows writing InfluxRecord instances into
 // an InfluxDb v2 instance via its recent API
 type RecordWriter struct {
-	conn            influxv2.Client
-	writeAPI        api.WriteAPI
-	address         string
-	retentionPolicy string
-	organization    string
-	bucket          string
-	incomingData    <-chan InfluxRecord
+	conn         influxv2.Client
+	writeAPI     api.WriteAPI
+	address      string
+	organization string
+	bucket       string
+	incomingData <-chan InfluxRecord
 }
 
 func (c *RecordWriter) addRecord(rec InfluxRecord) {

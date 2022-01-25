@@ -1,4 +1,4 @@
-# Chinspector 
+# Chinspector
 
 Chinspector is a simple log information extractor and agent for a Chia blockchain node/harvester.
 
@@ -106,3 +106,8 @@ Group=your_group
 [Install]
 WantedBy=multi-user.target
 ```
+
+
+## Useful resources
+
+* [Logging Messages Reference](https://github.com/Chia-Network/chia-blockchain/wiki/Logging-Messages-Reference)

@@ -50,12 +50,21 @@ func ExtractDate(line string, tz string) *PreparsedLine {
 	return &PreparsedLine{t, items[1]}
 }
 
+// Record is a preparsed log record with known date,
+// service, log level. The message itself remains unparsed.
 type Record struct {
 	Datetime time.Time
-	RecType  string
+	Service  string
 	Module   string
 	Level    string
 	Message  string
+}
+
+func (rec Record) String() string {
+	return fmt.Sprintf(
+		"Record{Datetime: %s, Service: %s, Module: %s, Level: %s, Message: %s",
+		rec.Datetime, rec.Service, rec.Module, rec.Level, rec.Message,
+	)
 }
 
 func ParseRecord(rec *PreparsedRecord) *Record {
@@ -63,7 +72,7 @@ func ParseRecord(rec *PreparsedRecord) *Record {
 	if len(items) >= 5 {
 		return &Record{
 			Datetime: rec.Dt,
-			RecType:  items[0],
+			Service:  items[0],
 			Module:   items[1],
 			Level:    items[2],
 			Message:  strings.Join(items[3:], " "),

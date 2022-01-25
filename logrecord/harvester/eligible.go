@@ -20,9 +20,10 @@ import (
 )
 
 type EligiblePlotsRec struct {
-	numPlots int
-	procTime float64
-	ts       time.Time
+	numEligible int
+	foundProofs int
+	procTime    float64
+	ts          time.Time
 }
 
 func (e *EligiblePlotsRec) Tags() map[string]string {
@@ -33,8 +34,9 @@ func (e *EligiblePlotsRec) Tags() map[string]string {
 
 func (e *EligiblePlotsRec) Fields() map[string]interface{} {
 	return map[string]interface{}{
-		"eligiblePlots":    e.numPlots,
+		"eligiblePlots":    e.numEligible,
 		"eligibleProcTime": e.procTime,
+		"foundProofs":      e.foundProofs,
 	}
 }
 
@@ -47,6 +49,6 @@ func (e *EligiblePlotsRec) Measurement() string {
 }
 
 func (e *EligiblePlotsRec) String() string {
-	return fmt.Sprintf("EligiblePlotsRec{ts: %v, numPlots: %d, procTime: %v}",
-		e.ts, e.numPlots, e.procTime)
+	return fmt.Sprintf("EligiblePlotsRec{ts: %v, eligiblePlots: %d, foundProofs: %d, eligibleProcTime: %v}",
+		e.ts, e.numEligible, e.foundProofs, e.procTime)
 }
