@@ -24,8 +24,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tomachalek/chinspector/config"
-	"github.com/tomachalek/chinspector/logrecord"
+	"chinspector/config"
+	"chinspector/logrecord"
 )
 
 const (
@@ -67,11 +67,11 @@ func Run(conf *config.Props, recProcessor *logrecord.Processor, finishEvent chan
 
 	for {
 		select {
-		case <-ticker.C:
+		case ts := <-ticker.C:
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func(rdr *FileTailReader) {
-				rdr.Processor().OnCheckStart()
+				rdr.Processor().OnCheckStart(ts)
 				rdr.ApplyNewContent(
 					func(v string) {
 						rdr.Processor().OnLineRead(v)

@@ -18,9 +18,10 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"time"
 
-	"github.com/tomachalek/chinspector/config"
-	"github.com/tomachalek/chinspector/logrecord"
+	"chinspector/config"
+	"chinspector/logrecord"
 )
 
 type FileBatchReader struct {
@@ -68,7 +69,7 @@ func RunBatch(conf *config.Props, recProcessor *logrecord.Processor) {
 		}
 	}
 
-	rdr.Processor().OnCheckStart()
+	rdr.Processor().OnCheckStart(time.Now())
 	rdr.ApplyNewContent(
 		func(v string) {
 			rdr.Processor().OnLineRead(v)

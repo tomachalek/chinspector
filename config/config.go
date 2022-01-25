@@ -22,22 +22,28 @@ type InfluxProps struct {
 func (conf *InfluxProps) Validate() error {
 	var err error
 	if conf.Server == "" {
-		return fmt.Errorf("Missing 'server' information for InfluxDB")
+		return fmt.Errorf("missing 'server' information for InfluxDB")
 	}
 	_, err = url.Parse(conf.Server)
 	if err != nil {
-		return fmt.Errorf("Invalid InfluxDB server URL: %s", conf.Server)
+		return fmt.Errorf("invalid InfluxDB server URL: %s", conf.Server)
 	}
 	if conf.Token == "" {
-		return fmt.Errorf("Missing 'token' information for InfluxDB")
+		return fmt.Errorf("missing 'token' information for InfluxDB")
 	}
 	if conf.Organization == "" {
-		return fmt.Errorf("Missing 'organization' information for InfluxDB")
+		return fmt.Errorf("missing 'organization' information for InfluxDB")
 	}
 	if conf.Bucket == "" {
-		return fmt.Errorf("Missing 'bucket' information for InfluxDB")
+		return fmt.Errorf("missing 'bucket' information for InfluxDB")
 	}
 	return nil
+}
+
+type EmailNotification struct {
+	Sender     string   `json:"sender"`
+	Receivers  []string `json:"receivers"`
+	SMTPServer string   `json:"smtpServer"`
 }
 
 type Props struct {
@@ -45,18 +51,19 @@ type Props struct {
 
 	// TimeZoneOffset specifies a local timezone by
 	// providing hh:mm offset. E.g. +02:00, -03:00
-	TimeZoneOffset        string      `json:"timeZoneOffset"`
-	CheckIntervalSec      int         `json:"checkIntervalSec"`
-	ErrCountTimeRangeSecs int         `json:"errCountTimeRangeSecs"`
-	NumErrorsAlarm        int         `json:"numErrorsAlarm"`
-	InfluxDB              InfluxProps `json:"influxDb"`
+	TimeZoneOffset        string            `json:"timeZoneOffset"`
+	CheckIntervalSec      int               `json:"checkIntervalSec"`
+	ErrCountTimeRangeSecs int               `json:"errCountTimeRangeSecs"`
+	NumErrorsAlarm        int               `json:"numErrorsAlarm"`
+	InfluxDB              InfluxProps       `json:"influxDb"`
+	EmailNotification     EmailNotification `json:"emailNotification"`
 }
 
 // Load loads main configuration
 func Load(path string) *Props {
 	rawData, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal("FATAL: ", err)
+		log.Fatalf("FATAL: error loading configuration file '%s': %s", path, err)
 	}
 	var conf Props
 	json.Unmarshal(rawData, &conf)

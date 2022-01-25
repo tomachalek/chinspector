@@ -21,12 +21,13 @@ import (
 	"fmt"
 	"os"
 	"syscall"
+	"time"
 )
 
 type ChiaLogRecProcessor interface {
 	FilePath() string
 	CheckIntervalSec() int
-	OnCheckStart()
+	OnCheckStart(ts time.Time)
 	OnLineRead(item string)
 	OnCheckStop()
 	OnQuit()

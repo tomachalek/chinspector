@@ -15,18 +15,18 @@
 package harvester
 
 import (
-	"fmt"
 	"log"
 	"regexp"
 	"strconv"
 
-	"github.com/tomachalek/chinspector/logrecord/raw"
-	"github.com/tomachalek/chinspector/writer/influx"
+	"chinspector/logrecord/raw"
+	"chinspector/writer/influx"
 )
 
 var (
-	loadedPlotsRg   = regexp.MustCompile("Loaded a total of (\\d+) plots of size (\\d*\\.)(\\d+) (TiB|PiB|EiB), in (\\d*\\.)(\\d+) seconds")
-	eligiblePlotsRg = regexp.MustCompile("(\\d+) plots were eligible for farming [0-9a-f]+\\.\\.\\. Found (\\d+) proofs. Time: (\\d*\\.)(\\d+) s. Total (\\d+) plots")
+	loadedPlotsRg = regexp.MustCompile(`Loaded a total of (\d+) plots of size (\d*\.)(\d+) (TiB|PiB|EiB), in (\d*\.)(\d+) seconds`)
+	// 0 plots were eligible for farming 699b2c33bb... Found 0 proofs. Time: 0.01032 s. Total 388 plots
+	eligiblePlotsRg = regexp.MustCompile(`(\d+) plots were eligible for farming [0-9a-f]+\.\.\. Found (\d+) proofs. Time: (\d*\.)(\d+) s. Total (\d+) plots`)
 )
 
 func ProcessRecord(rec *raw.Record, ch chan<- influx.InfluxRecord) error {
@@ -67,20 +67,22 @@ func ProcessRecord(rec *raw.Record, ch chan<- influx.InfluxRecord) error {
 	if len(ans) > 0 {
 		numEligible, err := strconv.Atoi(ans[1])
 		if err != nil {
-			log.Print("ERROR: ", err)
-			// TODO
+			return err
+		}
+		numProofs, err := strconv.Atoi(ans[2])
+		if err != nil {
+			return err
 		}
 		procTime, err := strconv.ParseFloat(ans[3]+ans[4], 64)
 		if err != nil {
-			log.Print("ERROR: ", err)
-			// TODO
+			return err
 		}
 		rec := &EligiblePlotsRec{
-			numPlots: numEligible,
-			procTime: procTime,
-			ts:       rec.Datetime,
+			numEligible: numEligible,
+			foundProofs: numProofs,
+			procTime:    procTime,
+			ts:          rec.Datetime,
 		}
-		fmt.Println("    ", rec)
 		ch <- rec
 		return nil
 	}

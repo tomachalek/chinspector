@@ -20,8 +20,11 @@ import (
 )
 
 type BlockChainValidationTimeRec struct {
-	time float64
-	ts   time.Time
+	ts                 time.Time
+	validationTime     float64
+	preValidationTime  float64
+	farmerResponseTime float64
+	cost               int64
 }
 
 func (e *BlockChainValidationTimeRec) Tags() map[string]string {
@@ -30,7 +33,10 @@ func (e *BlockChainValidationTimeRec) Tags() map[string]string {
 
 func (e *BlockChainValidationTimeRec) Fields() map[string]interface{} {
 	return map[string]interface{}{
-		"validationTime": e.time,
+		"blockValidationTime": e.validationTime,
+		"preValidationTime":   e.preValidationTime,
+		"farmerResponseTime":  e.farmerResponseTime,
+		"cost":                e.cost,
 	}
 }
 
@@ -39,10 +45,10 @@ func (e *BlockChainValidationTimeRec) Time() time.Time {
 }
 
 func (e *BlockChainValidationTimeRec) Measurement() string {
-	return "blockchain"
+	return "full_node"
 }
 
 func (e *BlockChainValidationTimeRec) String() string {
-	return fmt.Sprintf("BlockChainValidationTimeRec{ts: %v, time: %.3f}",
-		e.ts, e.time)
+	return fmt.Sprintf("BlockChainValidationTimeRec{ts: %v, blockValidationTime: %.3f, preValidationTime: %.3f, farmerResponseTime: %.3f}",
+		e.ts, e.validationTime, e.preValidationTime, e.farmerResponseTime)
 }
