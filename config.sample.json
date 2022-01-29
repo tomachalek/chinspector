@@ -6,7 +6,14 @@
         "server": "http://localhost:8096",
         "organization": "chinspector",
         "bucket": "status",
-        "token": "ATokenGeneratedByInfluxDB==",
+        "token": ".a.token.generated.by.InfluxDB==",
         "retentionPolicy": "midterm"
+    },
+    "emailNotification": {
+        "smtpServer": "smtp.gmail.com",
+        "smtpPort": 587,
+        "receivers": ["recipient@mail1", "recipient@mail2"],
+        "sender": "sender@mail",
+        "password": "*******"
     }
 }
