@@ -44,6 +44,8 @@ type EmailNotification struct {
 	Sender     string   `json:"sender"`
 	Receivers  []string `json:"receivers"`
 	SMTPServer string   `json:"smtpServer"`
+	SMTPPort   int      `json:"smtpPort"`
+	Password   string   `json:"password"`
 }
 
 type Props struct {

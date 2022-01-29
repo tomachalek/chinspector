@@ -94,7 +94,7 @@ func NewRecordWriter(conf *config.InfluxProps, incoming <-chan InfluxRecord) (*R
 	}
 	go func() {
 		for item := range incoming {
-			log.Print("DEBUG: sending >>>> ", item)
+			//log.Print("DEBUG: sending >>>> ", item)
 			w.addRecord(item)
 		}
 		w.Finish()

@@ -15,6 +15,7 @@
 package logrecord
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -37,6 +38,7 @@ type Processor struct {
 	lastCheckTS    time.Time
 	currCheckTS    time.Time
 	lastHealtyTS   time.Time
+	lastAlarmTS    time.Time
 	errCounts      map[string][]time.Time // key = measurement (e.g. "harvester")
 	mailConf       *config.EmailNotification
 }
@@ -44,6 +46,29 @@ type Processor struct {
 func (proc *Processor) OnCheckStart(ts time.Time) {
 	proc.lastCheckTS = proc.currCheckTS
 	proc.currCheckTS = ts
+
+	if time.Since(proc.lastHealtyTS) > 20*time.Second {
+		go func() {
+			var err error
+			if time.Since(proc.lastAlarmTS) > 10*time.Minute {
+				log.Print("WARNING: alarm status, sending e-mail")
+				err = notify.SendNotification(
+					proc.mailConf,
+					"Chinspector ALARM - node out of sync",
+					"Check the Node, Dude!!! The Node is likely fucked man!!!",
+					fmt.Sprintf("Last healthy status was at %v", proc.lastHealtyTS),
+					"",
+					"Best regards,<br />Chinspector",
+				)
+				if err != nil {
+					log.Print("ERROR: failed to send notification mail: ", err)
+
+				} else {
+					proc.lastAlarmTS = time.Now()
+				}
+			}
+		}()
+	}
 
 }
 
@@ -90,18 +115,6 @@ func (proc *Processor) tsRangeIsInAlarmLimit(t1 time.Time, t2 time.Time) bool {
 }
 
 func (proc *Processor) parseCurrentRecord() {
-	if time.Since(proc.lastHealtyTS) > 5*time.Minute {
-		go func() {
-			err := notify.SendNotification(
-				proc.mailConf,
-				"Chinspector ALARM - node out of sync",
-				"Check the Node, Dude!!! Node is likely fucked Man!!!",
-			)
-			if err != nil {
-				log.Print("ERROR: failed to send notification mail: ", err)
-			}
-		}()
-	}
 	rec := raw.ParseRecord(proc.currRecord)
 	if rec == nil {
 		log.Printf("WARNING: unknown record: %v", rec)
@@ -162,5 +175,7 @@ func NewProcessor(conf *config.Props) (*Processor, error) {
 		writeChannel:   wch,
 		writer:         writer,
 		errCounts:      make(map[string][]time.Time),
+		mailConf:       &conf.EmailNotification,
+		lastHealtyTS:   time.Now(),
 	}, nil
 }
